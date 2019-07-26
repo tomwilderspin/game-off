@@ -10,9 +10,12 @@ export default class extends Phaser.Scene {
     // load your assets
     //
     this.load.image('pitch', 'assets/graphics/pitch.png')
+    this.load.image('goal-left', 'assets/graphics/goal_posts_left.png')
+    this.load.image('goal-right', 'assets/graphics/goal_posts_right.png')
+    this.load.image('center-line', 'assets/graphics/center_line.png')
     this.load.spritesheet('ball',
       'assets/graphics/ball_frames.png',
-      { frameWidth: 44, frameHeight: 44 }
+      { frameWidth: 48, frameHeight: 48 }
     )
     this.load.spritesheet(
       'paddle-left',
