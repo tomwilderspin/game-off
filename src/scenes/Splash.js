@@ -20,7 +20,7 @@ export default class extends Phaser.Scene {
     this.load.spritesheet(
       'paddle-left',
       'assets/graphics/pud_left.png',
-      { frameWidth: 50, frameHeight: 100 }
+      { frameWidth: 44, frameHeight: 100 }
     )
     this.load.spritesheet(
       'paddle-right',

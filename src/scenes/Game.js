@@ -88,13 +88,6 @@ export default class extends Phaser.Scene {
         this.playerScores.player2 += 1
         this.playerText.player2.score.setText(`${this.playerScores.player2} `)
       }
-      const goalXPos = direction === 'left'
-        ? 45
-        : 765
-      goal.setVelocityX(0)
-
-      goal.x = goalXPos
-
       this.resetGame()
     }
   }
@@ -102,17 +95,13 @@ export default class extends Phaser.Scene {
   checkPaddleHit (direction) {
     return (ball, paddle) => {
       const { x, y } = this.ballVelocity
-      const paddleDirection = direction === 'left'
-        ? -1
-        : 1
-      this.ballVelocity.x = x + 5
+      this.ballVelocity.x = x + Phaser.Math.Between(1, 6)
       this.ballVelocity.x = x * -1
       ball.setVelocityX(this.ballVelocity.x)
       if (y < 0) {
         this.ballVelocity.y = y * -1
         ball.setVelocityY(this.ballVelocity.y)
       }
-      paddle.setVelocityX(paddleDirection)
     }
   }
 
@@ -156,6 +145,7 @@ export default class extends Phaser.Scene {
   createGoal (x, y, direction) {
     const goal = this.physics.add.sprite(x, y, `goal-${direction}`)
     goal.setOrigin(0.5, 0.5)
+    goal.body.immovable = true
     if (direction === 'left') {
       goal.setDisplaySize(80, 350)
     } else {
@@ -166,6 +156,7 @@ export default class extends Phaser.Scene {
 
   createPaddle (x, y, direction) {
     const paddle = this.physics.add.sprite(x, y, `paddle-${direction}`)
+    paddle.body.immovable = true
     paddle.setOrigin(0.5, 0.5)
     paddle.setCollideWorldBounds(true)
     return paddle
