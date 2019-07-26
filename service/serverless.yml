@@ -1,0 +1,19 @@
+service:
+  name: bxb-data-service
+  publish: false
+
+provider:
+  name: aws
+  runtime: nodejs10.x
+  stage: ${opt:stage, 'development'}
+  region: ${opt:region, 'eu-west-1'}
+  timeout: 60 #default timeout for all handlers
+
+plugins:
+  - serverless-webpack
+  - serverless-dotenv-plugin
+  - serverless-pseudo-parameters
+
+functions:
+  first:
+    handler: first.hello

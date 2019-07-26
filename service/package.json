@@ -1,0 +1,30 @@
+{
+  "name": "bxb-data-service",
+  "version": "1.0.0",
+  "description": "Data service provider for the BeerByBeer app.",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.4.3",
+    "@babel/preset-env": "^7.4.3",
+    "@babel/register": "^7.4.0",
+    "aws-sdk": "^2.441.0",
+    "babel-loader": "^8.0.5",
+    "chai": "^4.2.0",
+    "dotenv": "^7.0.0",
+    "eslint": "^5.16.0",
+    "eslint-config-airbnb-base": "^13.1.0",
+    "eslint-plugin-import": "^2.16.0",
+    "eslint-plugin-mocha": "^5.3.0",
+    "mocha": "^6.1.2",
+    "serverless-dotenv-plugin": "^2.0.1",
+    "serverless-pseudo-parameters": "^2.4.0",
+    "serverless-webpack": "^5.2.0",
+    "source-map-support": "^0.5.12",
+    "webpack": "^4.29.6",
+    "webpack-node-externals": "^1.7.2"
+  },
+  "author": "Tom Wilderspin (tomwilderspin@gmail.com)",
+  "license": "MIT"
+}
