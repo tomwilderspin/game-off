@@ -2,7 +2,7 @@
 import Phaser from 'phaser'
 import p5 from 'p5'
 import 'p5/lib/addons/p5.sound'
-const defaultBallVelocity = { x: Phaser.Math.Between(-300, 300), y: 300 }
+const defaultBallVelocity = { x: Phaser.Math.Between(-400, 400), y: 350 }
 const getDefaultFontStyles = (size, fill = '#fff') => ({
   font: `${size}px Bangers`,
   fill,
@@ -26,7 +26,7 @@ export default class extends Phaser.Scene {
     this.leftGoal = this.createGoal(45, this.cameras.main.centerY, 'left')
     this.rightGoal = this.createGoal(765, this.cameras.main.centerY + 10, 'right')
 
-    this.addPlayerText('John Doe', 'Dave')
+    this.playerText = this.addPlayerText('John Doe', 'Dave')
     this.mic = new p5.AudioIn()
     this.mic.start()
 
@@ -80,16 +80,21 @@ export default class extends Phaser.Scene {
 
   checkGoalHit (direction) {
     return (ball, goal) => {
-      if (direction === 'left') {
-        this.playerScores.player1 += 1
-      }
       if (direction === 'right') {
-        this.playerScores.player2 += 1
+        this.playerScores.player1 += 1
+        this.playerText.player1.score.setText(`${this.playerScores.player1} `)
       }
-      const paddleDirection = direction === 'left'
-        ? -1
-        : 1
-      goal.setVelocityX(paddleDirection)
+      if (direction === 'left') {
+        this.playerScores.player2 += 1
+        this.playerText.player2.score.setText(`${this.playerScores.player2} `)
+      }
+      const goalXPos = direction === 'left'
+        ? 45
+        : 765
+      goal.setVelocityX(0)
+
+      goal.x = goalXPos
+
       this.resetGame()
     }
   }
@@ -113,7 +118,7 @@ export default class extends Phaser.Scene {
 
   resetGame () {
     this.ballVelocity = defaultBallVelocity
-    this.ball.y = this.cameras.main.centerY
+    this.ball.y = (this.cameras.main.centerY + Phaser.Math.Between(10, 100))
     this.ball.x = this.cameras.main.centerX
     this.paddleLeft.y = this.cameras.main.centerY
     this.paddleRight.y = this.cameras.main.centerY
