@@ -9,7 +9,21 @@ export default class extends Phaser.Scene {
     //
     // load your assets
     //
-    this.load.image('mushroom', 'assets/images/mushroom2.png')
+    this.load.image('pitch', 'assets/graphics/pitch.png')
+    this.load.spritesheet('ball',
+      'assets/graphics/ball_frames.png',
+      { frameWidth: 44, frameHeight: 44 }
+    )
+    this.load.spritesheet(
+      'paddle-left',
+      'assets/graphics/pud_left.png',
+      { frameWidth: 50, frameHeight: 100 }
+    )
+    this.load.spritesheet(
+      'paddle-right',
+      'assets/graphics/pud_right.png',
+      { frameWidth: 50, frameHeight: 100 }
+    )
   }
 
   create () {

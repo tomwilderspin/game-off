@@ -4,6 +4,9 @@ export default {
   type: Phaser.AUTO,
   parent: 'content',
   width: 800,
-  height: 600,
-  localStorageName: 'phasergame'
+  height: 500,
+  localStorageName: 'soccergame',
+  physics: {
+    default: 'arcade'
+  }
 }
