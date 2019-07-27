@@ -2,20 +2,38 @@
 import Phaser from 'phaser'
 import p5 from 'p5'
 import 'p5/lib/addons/p5.sound'
-const defaultBallVelocity = { x: Phaser.Math.Between(-400, 400), y: 350 }
+import mqttClient from 'mqtt'
+const defaultBallVelocity = { x: -345, y: 350 }
 const getDefaultFontStyles = (size, fill = '#fff') => ({
   font: `${size}px Bangers`,
   fill,
   strokeThickness: 6,
   stroke: '#000'
 })
+let remoteStatus;
 export default class extends Phaser.Scene {
   constructor () {
     super({ key: 'GameScene' })
     this.ballVelocity = defaultBallVelocity
     this.playerScores = { player1: 0, player2: 0 }
   }
-  init () {}
+  init (args) {
+    const { mqttUrl } = args
+    const client = mqttClient.connect(mqttUrl)
+    client.on('connect', function () {
+      client.subscribe('tomw/game-off', function (err) {
+        if (err) {
+          console.error(err)
+        }
+      })
+    })
+    this.publishEvent = event => {
+      client.publish('tomw/game-off', JSON.stringify(event))
+    }
+    client.on('message', function (topic, message) {
+      remoteStatus = JSON.parse(message.toString())
+    })
+  }
   preload () {}
 
   create () {
@@ -26,7 +44,7 @@ export default class extends Phaser.Scene {
     this.leftGoal = this.createGoal(45, this.cameras.main.centerY, 'left')
     this.rightGoal = this.createGoal(765, this.cameras.main.centerY + 10, 'right')
 
-    this.playerText = this.addPlayerText('John Doe', 'Dave')
+    this.playerText = this.addPlayerText('Player 1', 'Player 2')
     this.mic = new p5.AudioIn()
     this.mic.start()
 
@@ -38,14 +56,30 @@ export default class extends Phaser.Scene {
     this.createAnimations()
     this.ballAnimation = this.ballTravel()
     this.ball.anims.play('ball-roll', true)
+    this.transmit = this.updateRemote()
   }
 
   update () {
-    this.controlPlayer(
-      (this.mic.getLevel() * 100),
-      this.paddleLeft
-    )
+    this.lift = (this.mic.getLevel() * 100)
+    this.controlPlayer(this.lift, this.paddleLeft)
+    if (remoteStatus) {
+      this.controlPlayer(remoteStatus.lift, this.paddleRight)
+    }
+    this.transmit(this.lift)
     this.ballAnimation()
+  }
+
+  updateRemote () {
+    let interval
+    return lift => {
+      if (!interval) {
+        interval = setInterval(() => {
+          this.publishEvent({ lift, score: this.playerScores.player1 })
+          clearInterval(interval)
+          interval = null
+        }, 100)
+      }
+    }
   }
 
   ballTravel () {

@@ -1,7 +1,7 @@
 {
   "name": "bxb-data-service",
   "version": "1.0.0",
-  "description": "Data service provider for the BeerByBeer app.",
+  "description": "game off service provider",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -26,5 +26,10 @@
     "webpack-node-externals": "^1.7.2"
   },
   "author": "Tom Wilderspin (tomwilderspin@gmail.com)",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "aws-device-gateway-signed-url": "^1.0.0",
+    "crypto-js": "^3.1.9-1",
+    "moment": "^2.24.0"
+  }
 }

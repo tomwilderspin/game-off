@@ -1,4 +1,5 @@
 import Phaser from 'phaser'
+import axios from 'axios';
 
 export default class extends Phaser.Scene {
   constructor () {
@@ -30,7 +31,13 @@ export default class extends Phaser.Scene {
   }
 
   create () {
-    this.scene.start('GameScene')
+    axios.get('https://se8wr4ve0m.execute-api.eu-west-1.amazonaws.com/development/game/connection')
+      .then(response => {
+        this.scene.start('GameScene', { mqttUrl: response.data.url })
+      })
+      .catch(error => {
+        console.error(error)
+      })
   }
 
   update () {}
