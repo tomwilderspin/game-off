@@ -1,9 +1,8 @@
 /* globals __DEV__ */
 import Phaser from 'phaser'
-import p5 from 'p5'
-import 'p5/lib/addons/p5.sound'
+
 import mqttClient from 'mqtt'
-const defaultBallVelocity = { x: -345, y: 350 }
+const defaultBallVelocity = { x: -475, y: 350 }
 const getDefaultFontStyles = (size, fill = '#fff') => ({
   font: `${size}px Bangers`,
   fill,
@@ -18,7 +17,8 @@ export default class extends Phaser.Scene {
     this.playerScores = { player1: 0, player2: 0 }
   }
   init (args) {
-    const { mqttUrl } = args
+    const { mqttUrl, mic } = args
+    this.mic = mic
     const client = mqttClient.connect(mqttUrl)
     client.on('connect', function () {
       client.subscribe('tomw/game-off', function (err) {
@@ -37,7 +37,7 @@ export default class extends Phaser.Scene {
   preload () {}
 
   create () {
-    this.createBackground('football game')
+    this.createBackground('Blow football !')
     this.paddleLeft = this.createPaddle(150, this.cameras.main.centerY, 'left')
     this.paddleRight = this.createPaddle(660, this.cameras.main.centerY, 'right')
     this.ball = this.createBall(this.cameras.main.centerX, this.cameras.main.centerY)
@@ -45,8 +45,6 @@ export default class extends Phaser.Scene {
     this.rightGoal = this.createGoal(765, this.cameras.main.centerY + 10, 'right')
 
     this.playerText = this.addPlayerText('Player 1', 'Player 2')
-    this.mic = new p5.AudioIn()
-    this.mic.start()
 
     this.physics.add.collider(this.ball, this.paddleLeft, this.checkPaddleHit('left'), null, this)
     this.physics.add.collider(this.ball, this.paddleRight, this.checkPaddleHit('right'), null, this)
@@ -63,7 +61,12 @@ export default class extends Phaser.Scene {
     this.lift = (this.mic.getLevel() * 100)
     this.controlPlayer(this.lift, this.paddleLeft)
     if (remoteStatus) {
-      this.controlPlayer(remoteStatus.lift, this.paddleRight)
+      if (remoteStatus.lift) {
+        this.controlPlayer(remoteStatus.lift, this.paddleRight)
+      }
+      if (remoteStatus.score) {
+        this.playerScores.player2 = remoteStatus.score
+      }
     }
     this.transmit(this.lift)
     this.ballAnimation()
@@ -71,10 +74,10 @@ export default class extends Phaser.Scene {
 
   updateRemote () {
     let interval
-    return lift => {
+    return (lift, score) => {
       if (!interval) {
         interval = setInterval(() => {
-          this.publishEvent({ lift, score: this.playerScores.player1 })
+          this.publishEvent({ lift, score })
           clearInterval(interval)
           interval = null
         }, 100)
@@ -117,6 +120,7 @@ export default class extends Phaser.Scene {
       if (direction === 'right') {
         this.playerScores.player1 += 1
         this.playerText.player1.score.setText(`${this.playerScores.player1} `)
+        this.transmit(null, this.playerScores.player1)
       }
       if (direction === 'left') {
         this.playerScores.player2 += 1

@@ -1,5 +1,7 @@
 import Phaser from 'phaser'
 import axios from 'axios';
+import p5 from 'p5'
+import 'p5/lib/addons/p5.sound'
 
 export default class extends Phaser.Scene {
   constructor () {
@@ -28,17 +30,31 @@ export default class extends Phaser.Scene {
       'assets/graphics/pud_right.png',
       { frameWidth: 50, frameHeight: 100 }
     )
+    this.load.spritesheet(
+      'start-btn',
+      'assets/graphics/btn_round_ok.png',
+      { frameWidth: 174, frameHeight: 174 }
+    )
   }
 
   create () {
-    axios.get('https://se8wr4ve0m.execute-api.eu-west-1.amazonaws.com/development/game/connection')
-      .then(response => {
-        this.scene.start('GameScene', { mqttUrl: response.data.url })
-      })
-      .catch(error => {
-        console.error(error)
-      })
+    const playBtn = this.add.image(this.cameras.main.centerX, this.cameras.main.centerY, 'start-btn')
+    playBtn.setInteractive()
+    playBtn.on('pointerup', () => {
+      
+    })
+    const mic = new p5.AudioIn()
+      mic.start()
+      axios.get('https://se8wr4ve0m.execute-api.eu-west-1.amazonaws.com/development/game/connection')
+        .then(response => {
+          this.scene.start('GameScene', { mqttUrl: response.data.url, mic })
+        })
+        .catch(error => {
+          console.error(error)
+        })
   }
+
+
 
   update () {}
 }
