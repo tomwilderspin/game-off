@@ -9,10 +9,7 @@ export default {
   physics: {
     default: 'arcade',
     arcade: {
-      y: 60,
-      x: 80,
-      width: 720,
-      height: 390
+      //debug: true
     }
   }
 }

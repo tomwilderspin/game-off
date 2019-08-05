@@ -15,5 +15,14 @@ class Game extends Phaser.Game {
     super(gameConfig)
   }
 }
+let context
+window.onload = () => {
+  context = new AudioContext()
+}
 
-window.game = new Game()
+document.getElementById('start').onclick = () => {
+  context.resume().then(() => {
+    window.game = new Game()
+    document.getElementById('start').style.display = 'none'
+  })
+}

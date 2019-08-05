@@ -1,15 +1,14 @@
 /* globals __DEV__ */
 import Phaser from 'phaser'
 
-import mqttClient from 'mqtt'
-const defaultBallVelocity = { x: -475, y: 350 }
+const defaultBallVelocity = { x: -200, y: 200 }
 const getDefaultFontStyles = (size, fill = '#fff') => ({
   font: `${size}px Bangers`,
   fill,
   strokeThickness: 6,
   stroke: '#000'
 })
-let remoteStatus;
+let remoteStatus
 export default class extends Phaser.Scene {
   constructor () {
     super({ key: 'GameScene' })
@@ -17,27 +16,28 @@ export default class extends Phaser.Scene {
     this.playerScores = { player1: 0, player2: 0 }
   }
   init (args) {
-    const { mqttUrl, mic } = args
+    const { mic, publishEvent, client } = args
     this.mic = mic
-    const client = mqttClient.connect(mqttUrl)
-    client.on('connect', function () {
-      client.subscribe('tomw/game-off', function (err) {
-        if (err) {
-          console.error(err)
-        }
-      })
-    })
-    this.publishEvent = event => {
-      client.publish('tomw/game-off', JSON.stringify(event))
-    }
-    client.on('message', function (topic, message) {
-      remoteStatus = JSON.parse(message.toString())
+    this.publishEvent = publishEvent
+    client.on('message', (topic, message) => {
+      const remoteMsg = JSON.parse(message.toString())
+      console.log(remoteMsg)
+      remoteStatus = remoteMsg
     })
   }
   preload () {}
 
   create () {
     this.createBackground('Blow football !')
+    const pitchContainer = [
+      this.createPitchEdge(88, 50, 620, 20),
+      this.createPitchEdge(70, 50, 20, 80),
+      this.createPitchEdge(710, 50, 20, 80),
+      this.createPitchEdge(88, 420, 620, 20),
+      this.createPitchEdge(70, 370, 20, 70),
+      this.createPitchEdge(710, 370, 20, 70)
+    ]
+    this.edge = this.createPitchEdge(88, 50, 620, 20)
     this.paddleLeft = this.createPaddle(150, this.cameras.main.centerY, 'left')
     this.paddleRight = this.createPaddle(660, this.cameras.main.centerY, 'right')
     this.ball = this.createBall(this.cameras.main.centerX, this.cameras.main.centerY)
@@ -51,10 +51,16 @@ export default class extends Phaser.Scene {
     this.physics.add.collider(this.ball, this.leftGoal, this.checkGoalHit('left'), null, this)
     this.physics.add.collider(this.ball, this.rightGoal, this.checkGoalHit('right'), null, this)
 
-    this.createAnimations()
+    pitchContainer.forEach(edge => {
+      this.physics.add.collider(this.ball, edge, this.checkEdgeHit, null, this)
+    })
+
     this.ballAnimation = this.ballTravel()
-    this.ball.anims.play('ball-roll', true)
     this.transmit = this.updateRemote()
+    this.ballHit = this.createBallHit()
+
+    this.goalText = this.createScoreSplash(this.cameras.main.centerX, this.cameras.main.centerY)
+    this.publishEvent({ action: 'gameStart' })
   }
 
   update () {
@@ -93,11 +99,11 @@ export default class extends Phaser.Scene {
         lastPoint = newX
         return
       }
-      if (newX > lastPoint) {
-        this.ball.scaleX = 1
+      if (newX > lastPoint && this.ball.anims._reverse) {
+        this.ball.anims.reverse('ball-roll')
       }
       if (newX < lastPoint) {
-        this.ball.scaleX = -1
+        this.ball.anims.reverse('ball-roll')
       }
       lastPoint = newX
     }
@@ -112,7 +118,20 @@ export default class extends Phaser.Scene {
   }
 
   controlPaddle (paddle, y) {
+    if (paddle.y > 360) {
+      paddle.setY(360)
+    }
+    if (paddle.y < 150) {
+      paddle.setY(150)
+    }
     paddle.setVelocityY(y)
+  }
+
+  checkEdgeHit (ball, edge) {
+    this.ballHit.x = ball.x - 5
+    this.ballHit.y = ball.y - 5
+    this.ballHit.anims.play('ball-hit-ani', true)
+    this.ballHit.setVisible(true)
   }
 
   checkGoalHit (direction) {
@@ -126,7 +145,11 @@ export default class extends Phaser.Scene {
         this.playerScores.player2 += 1
         this.playerText.player2.score.setText(`${this.playerScores.player2} `)
       }
-      this.resetGame()
+      this.goalText.setVisible(true)
+      this.scene.pause()
+      setTimeout(() => {
+        this.resetGame()
+      }, 3000)
     }
   }
 
@@ -140,6 +163,7 @@ export default class extends Phaser.Scene {
         this.ballVelocity.y = y * -1
         ball.setVelocityY(this.ballVelocity.y)
       }
+      paddle.anims.play(`paddle-${direction}`, true)
     }
   }
 
@@ -152,15 +176,22 @@ export default class extends Phaser.Scene {
 
     this.ball.setVelocityX(this.ballVelocity.x)
     this.ball.setVelocityY(this.ballVelocity.y)
+    this.goalText.setVisible(false)
+    this.scene.resume('GameScene')
   }
 
-  createAnimations () {
-    this.anims.create({
-      key: 'ball-roll',
-      frames: this.anims.generateFrameNumbers('ball', { start: 0, end: 5 }),
-      frameRate: 20,
-      repeat: -1
-    })
+  createPitchEdge (x, y, width, height) {
+    const graphic = this.add.graphics({ x, y })
+    this.physics.add.existing(graphic)
+    graphic.body.setSize(width, height, true)
+    graphic.body.immovable = true
+    return graphic
+  }
+
+  createScoreSplash (x, y) {
+    const goalText = this.add.image(x, y, 'goal-text')
+    goalText.setVisible(false)
+    return goalText
   }
 
   createBackground (titleText) {
@@ -173,17 +204,44 @@ export default class extends Phaser.Scene {
 
   createBall (x, y) {
     const ball = this.physics.add.sprite(x, y, 'ball')
+    this.anims.create({
+      key: 'ball-roll',
+      frames: this.anims.generateFrameNumbers('ball'),
+      frameRate: 35,
+      repeat: -1
+    })
+    ball.anims.load('ball-roll')
+    ball.setOrigin(0.5, 0.5)
+    ball.setSize(30, 30)
     ball.setCollideWorldBounds(true)
     ball.setBounce(1)
     ball.setVelocityY(this.ballVelocity.y)
     ball.setVelocityX(this.ballVelocity.x)
+    ball.anims.play('ball-roll', 0)
     return ball
+  }
+
+  createBallHit () {
+    const ballHit = this.physics.add.sprite(10, 10, 'ball-hit')
+    this.anims.create({
+      key: 'ball-hit-ani',
+      frames: this.anims.generateFrameNumbers('ball-hit'),
+      frameRate: 15
+    })
+    ballHit.on('animationcomplete', (animation, frame) => {
+      ballHit.setVisible(false)
+    }, this)
+    ballHit.anims.load('ball-hit-ani')
+    ballHit.setOrigin(0.5, 0.5)
+    ballHit.setVisible(false)
+    return ballHit
   }
 
   createGoal (x, y, direction) {
     const goal = this.physics.add.sprite(x, y, `goal-${direction}`)
     goal.setOrigin(0.5, 0.5)
     goal.body.immovable = true
+    goal.setSize(50, 400, true)
     if (direction === 'left') {
       goal.setDisplaySize(80, 350)
     } else {
@@ -194,8 +252,20 @@ export default class extends Phaser.Scene {
 
   createPaddle (x, y, direction) {
     const paddle = this.physics.add.sprite(x, y, `paddle-${direction}`)
+    this.anims.create({
+      key: `paddle-${direction}`,
+      frames: this.anims.generateFrameNumbers(`paddle-${direction}`),
+      frameRate: 40
+    })
+    paddle.on('animationcomplete', (animation, frame) => {
+      if (!paddle.anims._reverse) {
+        paddle.anims.playReverse(`paddle-${direction}`)
+      }
+    }, this)
+    paddle.anims.load(`paddle-${direction}`)
     paddle.body.immovable = true
     paddle.setOrigin(0.5, 0.5)
+    paddle.setSize(30, 80, true)
     paddle.setCollideWorldBounds(true)
     return paddle
   }
