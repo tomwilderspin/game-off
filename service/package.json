@@ -17,7 +17,7 @@
     "eslint-config-airbnb-base": "^13.1.0",
     "eslint-plugin-import": "^2.16.0",
     "eslint-plugin-mocha": "^5.3.0",
-    "mocha": "^6.1.2",
+    "mocha": "^10.2.0",
     "serverless-dotenv-plugin": "^2.0.1",
     "serverless-pseudo-parameters": "^2.4.0",
     "serverless-webpack": "^5.2.0",
